@@ -2,46 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withInputStream { stream ->
-        localProperties.load(stream)
-    }
-}
-
-def resolveConfigValue = { String key, String fallback = '' ->
-    def projectValue = project.findProperty(key)
-    if (projectValue != null && projectValue.toString().trim()) {
-        return projectValue.toString().trim()
-    }
-
-    def localValue = localProperties.getProperty(key)
-    if (localValue != null && localValue.toString().trim()) {
-        return localValue.toString().trim()
-    }
-
-    def envValue = System.getenv(key)
-    if (envValue != null && envValue.toString().trim()) {
-        return envValue.toString().trim()
-    }
-
-    return fallback
-}
-
 android {
     namespace = 'com.ytmusic.pro'
     compileSdk = 36
-
-    def spotifyClientId = resolveConfigValue('SPOTIFY_CLIENT_ID')
-    def spotifyRedirectScheme = resolveConfigValue('SPOTIFY_REDIRECT_SCHEME', 'ytmusicpro')
-    def spotifyRedirectHost = resolveConfigValue('SPOTIFY_REDIRECT_HOST', 'spotify-auth')
-    def spotifyRedirectPath = resolveConfigValue('SPOTIFY_REDIRECT_PATH', '/callback')
-    def spotifyRedirectUri = resolveConfigValue(
-            'SPOTIFY_REDIRECT_URI',
-            spotifyRedirectScheme + '://' + spotifyRedirectHost + spotifyRedirectPath
-    )
-    def parsedSpotifyRedirectUri = new URI(spotifyRedirectUri)
 
     defaultConfig {
         applicationId = "com.ytmusic.pro"
@@ -49,19 +12,6 @@ android {
         targetSdk = 36
         versionCode = 200
         versionName = "2.0.0"
-
-        manifestPlaceholders = [
-                spotifyRedirectScheme: parsedSpotifyRedirectUri.scheme,
-                spotifyRedirectHost  : parsedSpotifyRedirectUri.host,
-                spotifyRedirectPath  : parsedSpotifyRedirectUri.path ?: ''
-        ]
-
-        buildConfigField 'String', 'SPOTIFY_CLIENT_ID', "\"${spotifyClientId}\""
-        buildConfigField 'String', 'SPOTIFY_REDIRECT_URI', "\"${spotifyRedirectUri}\""
-    }
-
-    buildFeatures {
-        buildConfig = true
     }
 
     def keystorePath = project.findProperty('RELEASE_STORE_FILE')
