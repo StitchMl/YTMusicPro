@@ -1,12 +1,12 @@
 # YTMusic Pro ProGuard Rules - Production Ready
 
 # WebView JavaScript Interface
--keep class com.ytmusic.pro.MainActivity$WebAppInterface { *; }
--keepclassmembers class com.ytmusic.pro.MainActivity$WebAppInterface {
-    public *;
-}
 -keepattributes JavascriptInterface
 -keepattributes *Annotation*
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class com.ytmusic.pro.web.webapp.WebAppBridge { *; }
 
 # WebView Support
 -keepclassmembers class * extends android.webkit.WebViewClient {
@@ -28,7 +28,7 @@
 
 # Keep Service classes
 -keep class com.ytmusic.pro.ForegroundService { *; }
--keep class com.ytmusic.pro.YTMusicWebview { *; }
+-keep class com.ytmusic.pro.web.webview.YTMusicWebview { *; }
 
 # General Android
 -keep class android.webkit.** { *; }

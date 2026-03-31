@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Theme.YTMusicPro" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Primary brand color. -->
@@ -15,7 +15,7 @@
         <item name="android:windowBackground">@color/background_dark</item>
     </style>
 
-    <style name="Theme.YTMusicPro.NoActionBar">
+    <style name="Theme.YTMusicPro.NoActionBar" parent="Theme.YTMusicPro">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>

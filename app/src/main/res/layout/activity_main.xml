@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    tools:ignore="MergeRootFrame">
 
-    <com.ytmusic.pro.YTMusicWebview
+    <com.ytmusic.pro.web.webview.YTMusicWebview
         android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
@@ -13,8 +15,25 @@
         android:id="@+id/progress_loader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:visibility="gone"
         android:indeterminateTint="@color/primary" />
 
-</RelativeLayout>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_spotify_import"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:minHeight="48dp"
+        android:text="@string/spotify_import_button"
+        android:textAllCaps="false"
+        android:textColor="#4A148C"
+        app:backgroundTint="#1DB954"
+        app:cornerRadius="24dp"
+        app:iconTint="@android:color/white"
+        app:rippleColor="@color/white"
+        app:strokeWidth="0dp" />
+
+</FrameLayout>
