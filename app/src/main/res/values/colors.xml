@@ -7,5 +7,5 @@
     <color name="background_dark">#000000</color>
     <color name="surface_dark">#171717</color>
     <color name="surface_dark_alt">#1E1A10</color>
-    <color name="ic_launcher_background">#121212</color>
+    <color name="ic_launcher_background">#00000000</color>
 </resources>

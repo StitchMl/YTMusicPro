@@ -20,6 +20,8 @@ import com.ytmusic.pro.web.webapp.WebAppBridgeManager
 
 class MainWebViewCoordinator(
     private val activity: AppCompatActivity,
+    private val playbackListener: PlaybackMetadataPoller.Listener? = null,
+    private val bridgeListener: WebAppBridge.Listener? = null,
 ) {
 
     private var offlinePageController: OfflinePageController? = null
@@ -35,9 +37,9 @@ class MainWebViewCoordinator(
         configureRendererPriority(webView)
         offlinePageController = OfflinePageController(activity)
         scriptInjector = WebViewScriptInjector(webView, InjectionScriptLoader.load(activity))
-        val webAppBridge = WebAppBridge(activity)
+        val webAppBridge = WebAppBridge(activity, bridgeListener)
         webAppBridgeManager = WebAppBridgeManager(webView, webAppBridge)
-        playbackMetadataPoller = PlaybackMetadataPoller(webView, webAppBridge)
+        playbackMetadataPoller = PlaybackMetadataPoller(webView, webAppBridge, playbackListener)
 
         configureWebSettings(webView.settings)
         configureCookies()

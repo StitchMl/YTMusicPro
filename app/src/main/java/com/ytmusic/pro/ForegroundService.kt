@@ -155,6 +155,7 @@ class ForegroundService : Service() {
 
     private fun handleActionIntent(action: String) {
         if (PlaybackControlContract.ACTION_STOP == action) {
+            PlaybackActionBroadcaster.send(this, action)
             stopPlaybackService()
             return
         }

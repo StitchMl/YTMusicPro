@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>YTMusic Pro Jam</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #070707;
+            --surface: rgba(20, 20, 20, 0.88);
+            --surface-strong: rgba(28, 28, 28, 0.96);
+            --surface-soft: rgba(255, 255, 255, 0.04);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #fafafa;
+            --muted: #b6b6b6;
+            --accent: #ff1f44;
+            --accent-soft: rgba(255, 31, 68, 0.18);
+            --shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(255, 31, 68, 0.16), transparent 24%),
+                radial-gradient(circle at top right, rgba(255, 147, 0, 0.12), transparent 26%),
+                linear-gradient(180deg, #101010 0%, var(--bg) 48%, #040404 100%);
+            color: var(--text);
+            font-family: "Segoe UI", system-ui, sans-serif;
+        }
+
+        .shell {
+            width: min(980px, 100%);
+            margin: 0 auto;
+            padding: 18px 14px 42px;
+        }
+
+        .hero {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            padding-bottom: 14px;
+            backdrop-filter: blur(18px);
+        }
+
+        .hero-card {
+            padding: 18px;
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(255, 31, 68, 0.12), rgba(18, 18, 18, 0.95));
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .hero-top,
+        .hero-bottom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            margin: 0;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: #ffd9e1;
+            border: 1px solid rgba(255, 31, 68, 0.24);
+            font-size: 0.94rem;
+        }
+
+        .badge::before {
+            content: "";
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #ff4666;
+            box-shadow: 0 0 16px rgba(255, 70, 102, 0.72);
+        }
+
+        .name-field {
+            min-width: min(100%, 260px);
+            flex: 1 1 260px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: rgba(255, 31, 68, 0.36);
+            box-shadow: 0 0 0 3px rgba(255, 31, 68, 0.12);
+        }
+
+        .grid {
+            display: grid;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .player-card,
+        .search-card,
+        .queue-card {
+            padding: 18px;
+            border-radius: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .player {
+            display: grid;
+            grid-template-columns: 108px 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .artwork {
+            width: 108px;
+            aspect-ratio: 1;
+            border-radius: 22px;
+            background:
+                linear-gradient(145deg, rgba(255, 31, 68, 0.18), rgba(255, 255, 255, 0.06)),
+                #141414;
+            border: 1px solid var(--border);
+            object-fit: cover;
+        }
+
+        .eyebrow {
+            margin: 0 0 6px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.72rem;
+        }
+
+        .track-title {
+            margin: 0;
+            font-size: 1.2rem;
+            line-height: 1.2;
+        }
+
+        .track-meta,
+        .status,
+        .queue-meta {
+            margin-top: 8px;
+            color: var(--muted);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: 0;
+            border-radius: 999px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.99);
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #ff355f, #ff113a);
+            color: white;
+        }
+
+        .secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .search-bar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .results,
+        .queue {
+            list-style: none;
+            padding: 0;
+            margin: 18px 0 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .result {
+            display: grid;
+            grid-template-columns: 70px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 18px;
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+        }
+
+        .queue-item {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 18px;
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+        }
+
+        .result img,
+        .queue-item img {
+            width: 70px;
+            height: 70px;
+            border-radius: 16px;
+            object-fit: cover;
+            background: #151515;
+        }
+
+        .result-title,
+        .queue-title {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.25;
+        }
+
+        .result-meta,
+        .queue-meta {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.92rem;
+        }
+
+        .empty {
+            margin-top: 18px;
+            color: var(--muted);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 700px) {
+            .player {
+                grid-template-columns: 1fr;
+            }
+
+            .artwork {
+                width: 100%;
+                max-width: 180px;
+            }
+
+            .result,
+            .queue-item {
+                grid-template-columns: 64px 1fr;
+            }
+
+            .result button {
+                grid-column: span 2;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="shell">
+    <section class="hero">
+        <div class="hero-card">
+            <div class="hero-top">
+                <div>
+                    <h1 class="title">Controller Jam</h1>
+                    <p class="subtitle">Cerca un brano, aggiungilo in coda e controlla l'host come in una mini app musicale.</p>
+                </div>
+                <div class="badge" id="roomBadge">Connessione alla stanza...</div>
+            </div>
+            <div class="hero-bottom" style="margin-top: 14px;">
+                <div class="name-field">
+                    <input id="displayName" maxlength="32" placeholder="Il tuo nome">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid">
+        <div class="player-card">
+            <div class="player">
+                <img class="artwork" id="artwork" alt="Copertina brano">
+                <div>
+                    <p class="eyebrow">Now Playing</p>
+                    <h2 class="track-title" id="nowPlayingTitle">Caricamento...</h2>
+                    <div class="track-meta" id="nowPlayingMeta"></div>
+                    <div class="track-meta" id="currentJamMeta"></div>
+                    <div class="controls">
+                        <button class="primary" id="playButton">Play</button>
+                        <button class="secondary" id="pauseButton">Pause</button>
+                        <button class="secondary" id="skipButton">Skip</button>
+                        <button class="secondary" id="stopButton">Stop</button>
+                    </div>
+                    <div class="status" id="statusMessage"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-card">
+            <p class="eyebrow">Aggiungi brani</p>
+            <h2 style="margin: 0;">Ricerca veloce</h2>
+            <div class="search-bar" style="margin-top: 14px;">
+                <input id="searchInput" placeholder="Cerca brani, artisti o video musicali">
+                <button class="primary" id="searchButton">Cerca</button>
+            </div>
+            <p class="empty hidden" id="searchEmpty">Inizia a digitare per vedere i risultati.</p>
+            <ul class="results" id="searchResults"></ul>
+        </div>
+
+        <div class="queue-card">
+            <p class="eyebrow">Jam Queue</p>
+            <h2 style="margin: 0;">Coda condivisa</h2>
+            <p class="queue-meta" id="queueHint">I prossimi brani scelti dai partecipanti appariranno qui.</p>
+            <ul class="queue" id="queueList"></ul>
+            <p class="empty" id="emptyQueue">La coda e' vuota.</p>
+        </div>
+    </section>
+</main>
+<script src="/jam.js"></script>
+</body>
+</html>

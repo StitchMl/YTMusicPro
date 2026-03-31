@@ -101,10 +101,20 @@
             "timeupdate",
             "loadedmetadata",
             "durationchange",
+            "ended",
             "emptied",
             "seeking",
             "seeked"
         ].forEach(eventName => mediaElement.addEventListener(eventName, scheduleUpdate));
+        mediaElement.addEventListener("ended", function () {
+            if (window.YTMusicPro && typeof window.YTMusicPro.onPlaybackEnded === "function") {
+                try {
+                    window.YTMusicPro.onPlaybackEnded();
+                } catch (error) {
+                    console.error("YTMusic Pro: onPlaybackEnded failed", error);
+                }
+            }
+        });
     }
 
     function updateMetadata() {

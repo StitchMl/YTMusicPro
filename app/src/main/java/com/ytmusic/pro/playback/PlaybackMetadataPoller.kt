@@ -12,7 +12,12 @@ import kotlin.math.abs
 class PlaybackMetadataPoller(
     private val webView: WebView,
     private val bridge: WebAppBridge,
+    private val listener: Listener? = null,
 ) {
+
+    interface Listener {
+        fun onPlaybackSnapshot(snapshot: PlaybackSnapshot)
+    }
 
     private val handler = Handler(Looper.getMainLooper())
     private val pollRunnable = Runnable(::poll)
@@ -49,6 +54,9 @@ class PlaybackMetadataPoller(
         webView.evaluateJavascript(METADATA_SCRIPT) { rawResult ->
             try {
                 val snapshot = parseSnapshot(rawResult)
+                if (snapshot != null) {
+                    listener?.onPlaybackSnapshot(snapshot)
+                }
                 if (snapshot != null && shouldPublish(snapshot)) {
                     lastSnapshot = snapshot
                     Log.d(

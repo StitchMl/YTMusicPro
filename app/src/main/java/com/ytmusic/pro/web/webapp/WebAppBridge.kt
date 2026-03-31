@@ -11,7 +11,14 @@ import androidx.core.content.ContextCompat
 import com.ytmusic.pro.ForegroundService
 import com.ytmusic.pro.playback.PlaybackControlContract
 
-class WebAppBridge(context: Context) {
+class WebAppBridge(
+    context: Context,
+    private val listener: Listener? = null,
+) {
+
+    interface Listener {
+        fun onPlaybackEnded()
+    }
 
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -47,5 +54,10 @@ class WebAppBridge(context: Context) {
                 appContext.startService(serviceIntent)
             }
         }
+    }
+
+    @JavascriptInterface
+    fun onPlaybackEnded() {
+        mainHandler.post { listener?.onPlaybackEnded() }
     }
 }

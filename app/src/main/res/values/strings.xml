@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">YTMusic Pro</string>
+    <string name="jam_button_idle">Jam</string>
+    <string name="jam_button_active">Jam Live</string>
+    <string name="jam_same_wifi_hint">Invita i partecipanti ad aprire questo link dal browser sulla stessa rete Wi-Fi o hotspot del telefono host.</string>
+    <string name="jam_dialog_title">Controller Jam</string>
+    <string name="jam_dialog_share">Condividi link</string>
+    <string name="jam_dialog_stop">Ferma jam</string>
+    <string name="jam_dialog_close">Chiudi</string>
+    <string name="jam_start_error">Impossibile avviare la jam. Collega il telefono a una rete Wi-Fi o hotspot e riprova.</string>
+    <string name="jam_share_subject">Partecipa alla mia jam</string>
+    <string name="jam_share_text">Unisciti alla jam da browser: %1$s</string>
+    <string name="jam_status_room">Room: %1$s</string>
+    <string name="jam_status_queue">Brani in coda: %1$d</string>
+    <string name="jam_status_now_playing">In riproduzione: %1$s</string>
+    <string name="jam_status_now_playing_unknown">In riproduzione: nessun brano rilevato</string>
+    <string name="jam_status_current_host">Brano jam attivo: %1$s</string>
 </resources>
