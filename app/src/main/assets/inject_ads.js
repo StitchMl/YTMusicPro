@@ -1,8 +1,9 @@
 (function () {
     const state = window.__YTMusicPro;
-    if (!state) {
+    if (!state || window.__YTMusicProAdsInjected) {
         return;
     }
+    window.__YTMusicProAdsInjected = true;
 
     function blockAds() {
         const adSelectors = [

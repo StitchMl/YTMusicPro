@@ -2,6 +2,7 @@ package com.ytmusic.pro.jam
 
 import android.net.Uri
 import java.util.Locale
+import androidx.core.net.toUri
 
 object JamTrackUrlNormalizer {
 
@@ -25,7 +26,7 @@ object JamTrackUrlNormalizer {
         }
 
         val uri = try {
-            Uri.parse(candidate)
+            candidate.toUri()
         } catch (_: Exception) {
             null
         } ?: return null

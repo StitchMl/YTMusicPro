@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.ytmusic.pro.ForegroundService
 import com.ytmusic.pro.playback.PlaybackControlContract
+import com.ytmusic.pro.playback.PlaybackSnapshot
 
 class WebAppBridge(
     context: Context,
@@ -17,7 +18,13 @@ class WebAppBridge(
 ) {
 
     interface Listener {
+        fun onPlaybackSnapshotChanged(snapshot: PlaybackSnapshot) = Unit
+
         fun onPlaybackEnded()
+
+        fun onOpenJamControlsRequested() = Unit
+
+        fun onQueueLayoutChanged(snapshot: QueueLayoutSnapshot) = Unit
     }
 
     private val appContext = context.applicationContext
@@ -37,6 +44,7 @@ class WebAppBridge(
         position: Long,
         duration: Long,
     ) {
+        val snapshot = PlaybackSnapshot.create(title, artist, albumArtUrl, isPlaying, position, duration)
         val serviceIntent = Intent(appContext, ForegroundService::class.java).apply {
             putExtra(PlaybackControlContract.EXTRA_TITLE, title)
             putExtra(PlaybackControlContract.EXTRA_ARTIST, artist)
@@ -48,6 +56,7 @@ class WebAppBridge(
 
         val hasDisplayableMetadata = !TextUtils.isEmpty(title) || !TextUtils.isEmpty(artist)
         mainHandler.post {
+            listener?.onPlaybackSnapshotChanged(snapshot)
             if (hasDisplayableMetadata) {
                 ContextCompat.startForegroundService(appContext, serviceIntent)
             } else {
@@ -59,5 +68,22 @@ class WebAppBridge(
     @JavascriptInterface
     fun onPlaybackEnded() {
         mainHandler.post { listener?.onPlaybackEnded() }
+    }
+
+    @JavascriptInterface
+    fun openJamControls() {
+        mainHandler.post { listener?.onOpenJamControlsRequested() }
+    }
+
+    @JavascriptInterface
+    fun updateQueueLayout(layoutJson: String?) {
+        val snapshot =
+            try {
+                QueueLayoutSnapshot.fromJson(layoutJson)
+            } catch (_: Exception) {
+                return
+            }
+
+        mainHandler.post { listener?.onQueueLayoutChanged(snapshot) }
     }
 }

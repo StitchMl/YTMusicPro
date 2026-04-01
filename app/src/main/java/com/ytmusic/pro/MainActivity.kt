@@ -5,6 +5,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -12,7 +13,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ytmusic.pro.jam.JamSessionManager
 import com.ytmusic.pro.jam.JamSessionState
@@ -20,28 +20,39 @@ import com.ytmusic.pro.network.NetworkStateMonitor
 import com.ytmusic.pro.playback.PlaybackCommandExecutor
 import com.ytmusic.pro.playback.PlaybackControlContract
 import com.ytmusic.pro.playback.PlaybackControlReceiver
+import com.ytmusic.pro.playback.PlaybackSnapshot
+import com.ytmusic.pro.web.webapp.QueueLayoutSnapshot
+import com.ytmusic.pro.web.webapp.WebAppBridge
 import com.ytmusic.pro.web.webview.MainWebViewCoordinator
+import com.ytmusic.pro.web.webview.QueueGestureOverlayView
 import com.ytmusic.pro.web.webview.YTMusicWebview
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: YTMusicWebview
-    private lateinit var jamButton: MaterialButton
+    private lateinit var queueGestureOverlayView: QueueGestureOverlayView
     private lateinit var playbackCommandExecutor: PlaybackCommandExecutor
     private lateinit var jamSessionManager: JamSessionManager
     private var mediaReceiver: PlaybackControlReceiver? = null
     private var networkStateMonitor: NetworkStateMonitor? = null
     private var webViewCoordinator: MainWebViewCoordinator? = null
     private lateinit var notificationPermissionLauncher: ActivityResultLauncher<String>
-    private val jamStateListener =
-        object : JamSessionManager.Listener {
-            override fun onJamStateChanged(state: JamSessionState) {
-                if (!::jamButton.isInitialized) {
-                    return
-                }
-                jamButton.text = getString(
-                    if (state.active) R.string.jam_button_active else R.string.jam_button_idle,
-                )
+    private val webBridgeListener =
+        object : WebAppBridge.Listener {
+            override fun onPlaybackSnapshotChanged(snapshot: PlaybackSnapshot) {
+                jamSessionManager.onPlaybackSnapshot(snapshot)
+            }
+
+            override fun onPlaybackEnded() {
+                jamSessionManager.onPlaybackEnded()
+            }
+
+            override fun onOpenJamControlsRequested() {
+                runOnUiThread { handleJamEntryPoint() }
+            }
+
+            override fun onQueueLayoutChanged(snapshot: QueueLayoutSnapshot) {
+                runOnUiThread { webViewCoordinator?.updateQueueLayout(snapshot) }
             }
         }
 
@@ -50,18 +61,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
-        jamButton = findViewById(R.id.jam_button)
+        queueGestureOverlayView = findViewById(R.id.queue_gesture_overlay)
         val progressView: View = findViewById(R.id.progress_loader)
         playbackCommandExecutor = PlaybackCommandExecutor(webView)
-        jamSessionManager = JamSessionManager(applicationContext, playbackCommandExecutor).also {
-            it.addListener(jamStateListener)
-        }
+        jamSessionManager = JamSessionManager(applicationContext, playbackCommandExecutor)
 
         initializeResultLaunchers()
         initializeWebViewCoordinator(progressView)
         requestNotificationPermission()
         configureBackNavigation()
-        configureJamButton()
         registerMediaReceiver()
         startNetworkMonitor()
     }
@@ -81,8 +89,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeWebViewCoordinator(progressView: View) {
-        webViewCoordinator = MainWebViewCoordinator(this, jamSessionManager, jamSessionManager).also {
-            it.initialize(webView, progressView)
+        webViewCoordinator = MainWebViewCoordinator(this, webBridgeListener).also {
+            it.initialize(webView, progressView, queueGestureOverlayView)
         }
     }
 
@@ -125,25 +133,24 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun configureJamButton() {
-        jamButton.setOnClickListener {
-            if (jamSessionManager.isActive()) {
-                showJamDialog(jamSessionManager.currentState())
-                return@setOnClickListener
-            }
-
-            val result = jamSessionManager.startSession()
-            if (!result.success) {
-                Toast.makeText(
-                    this,
-                    result.message ?: getString(R.string.jam_start_error),
-                    Toast.LENGTH_LONG,
-                ).show()
-                return@setOnClickListener
-            }
-
-            showJamDialog(result.state)
+    private fun handleJamEntryPoint() {
+        Log.d("YTMusicWebView", "handleJamEntryPoint invoked")
+        if (jamSessionManager.isActive()) {
+            showJamDialog(jamSessionManager.currentState())
+            return
         }
+
+        val result = jamSessionManager.startSession()
+        if (!result.success) {
+            Toast.makeText(
+                this,
+                result.message ?: getString(R.string.jam_start_error),
+                Toast.LENGTH_LONG,
+            ).show()
+            return
+        }
+
+        showJamDialog(result.state)
     }
 
     private fun showJamDialog(state: JamSessionState) {
@@ -211,7 +218,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        jamSessionManager.removeListener(jamStateListener)
         if (isFinishing && !isChangingConfigurations) {
             jamSessionManager.stopSession()
         }

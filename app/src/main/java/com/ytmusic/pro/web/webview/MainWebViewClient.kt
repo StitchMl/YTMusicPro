@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.http.SslError
+import android.util.Log
 import android.view.View
 import android.webkit.SslErrorHandler
 import android.webkit.WebResourceError
@@ -26,6 +27,8 @@ class MainWebViewClient(
         fun onPageContextChanged(url: String?)
 
         fun onMusicPageReady()
+
+        fun onJamCommandRequested()
 
         fun onOfflinePageRequired()
     }
@@ -67,6 +70,11 @@ class MainWebViewClient(
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
         val url = request.url.toString()
+        if (url.startsWith(JAM_COMMAND_URL, ignoreCase = true)) {
+            Log.d("YTMusicWebView", "Intercepted jam command URL: $url")
+            listener.onJamCommandRequested()
+            return true
+        }
         if (WebSecurityPolicy.isAllowedInWebView(url)) {
             return false
         }
@@ -84,5 +92,9 @@ class MainWebViewClient(
         if (!NetworkUtils.isNetworkAvailable(activity)) {
             listener.onOfflinePageRequired()
         }
+    }
+
+    private companion object {
+        const val JAM_COMMAND_URL = "ytmusicpro://jam"
     }
 }

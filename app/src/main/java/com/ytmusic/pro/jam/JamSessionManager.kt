@@ -1,13 +1,14 @@
+@file:Suppress("unused")
+
 package com.ytmusic.pro.jam
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.ytmusic.pro.playback.PlaybackCommandExecutor
 import com.ytmusic.pro.playback.PlaybackControlContract
-import com.ytmusic.pro.playback.PlaybackMetadataPoller
 import com.ytmusic.pro.playback.PlaybackSnapshot
-import com.ytmusic.pro.web.webapp.WebAppBridge
 import fi.iki.elonen.NanoHTTPD
 import java.io.IOException
 import kotlin.random.Random
@@ -15,7 +16,7 @@ import kotlin.random.Random
 class JamSessionManager(
     context: Context,
     private val playbackCommandExecutor: PlaybackCommandExecutor,
-) : PlaybackMetadataPoller.Listener, WebAppBridge.Listener, JamHttpServer.Controller {
+) : JamHttpServer.Controller {
 
     interface Listener {
         fun onJamStateChanged(state: JamSessionState)
@@ -70,7 +71,8 @@ class JamSessionManager(
             }
         }
 
-        val hostAddress = LocalNetworkAddressResolver.findLocalIpv4Address()
+        val networkCandidates = LocalNetworkAddressResolver.findLocalIpv4Candidates()
+        val hostAddress = networkCandidates.firstOrNull()?.address
             ?: return StartResult(
                 success = false,
                 state = currentState(),
@@ -86,6 +88,11 @@ class JamSessionManager(
             )
 
         val url = "http://$hostAddress:${startedServer.listeningPort}/"
+        Log.d(
+            "JamSession",
+            "Starting session hostAddress=$hostAddress port=${startedServer.listeningPort} " +
+                "candidates=${networkCandidates.joinToString { "${it.interfaceName}:${it.address}:${it.score}" }}",
+        )
         synchronized(lock) {
             server = startedServer
             roomCode = room
@@ -146,7 +153,7 @@ class JamSessionManager(
         notifyStateChanged()
 
         if (shouldAutoplay) {
-            mainHandler.post { playNextQueuedTrack(useNativeFallback = false) }
+            mainHandler.post { playNextQueuedTrack(onQueueEmpty = QueueEmptyBehavior.NO_OP) }
         }
 
         return JamActionResult(
@@ -160,11 +167,16 @@ class JamSessionManager(
         if (!isActive()) {
             return JamActionResult(false, "La jam non e' attiva.", currentState())
         }
-        synchronized(lock) {
+        val shouldStartQueuedTrack = synchronized(lock) {
             currentSnapshot = currentSnapshot.copy(isPlaying = true)
+            currentJamEntry == null && queue.isNotEmpty()
         }
         notifyStateChanged()
-        mainHandler.post { playbackCommandExecutor.execute(PlaybackControlContract.ACTION_PLAY, 0L) }
+        if (shouldStartQueuedTrack) {
+            mainHandler.post { playNextQueuedTrack(onQueueEmpty = QueueEmptyBehavior.NO_OP) }
+        } else {
+            mainHandler.post { playbackCommandExecutor.execute(PlaybackControlContract.ACTION_PLAY, 0L) }
+        }
         return JamActionResult(true, "Play inviato.", currentState())
     }
 
@@ -184,7 +196,7 @@ class JamSessionManager(
         if (!isActive()) {
             return JamActionResult(false, "La jam non e' attiva.", currentState())
         }
-        mainHandler.post { playNextQueuedTrack(useNativeFallback = true) }
+        mainHandler.post { playNextQueuedTrack(onQueueEmpty = QueueEmptyBehavior.NATIVE_NEXT) }
         return JamActionResult(true, "Skip inviato.", currentState())
     }
 
@@ -201,33 +213,43 @@ class JamSessionManager(
         return JamActionResult(true, "Stop inviato.", currentState())
     }
 
-    override fun onPlaybackSnapshot(snapshot: PlaybackSnapshot) {
+    fun onPlaybackSnapshot(snapshot: PlaybackSnapshot) {
         synchronized(lock) {
             currentSnapshot = snapshot
         }
         notifyStateChanged()
     }
 
-    override fun onPlaybackEnded() {
+    fun onPlaybackEnded() {
         if (!isActive()) {
             return
         }
-        mainHandler.post { playNextQueuedTrack(useNativeFallback = false) }
+        mainHandler.post { playNextQueuedTrack(onQueueEmpty = QueueEmptyBehavior.STOP_CURRENT) }
     }
 
-    private fun playNextQueuedTrack(useNativeFallback: Boolean) {
+    private fun playNextQueuedTrack(onQueueEmpty: QueueEmptyBehavior) {
         val nextEntry: JamQueueEntry?
+        val shouldStopPlayback: Boolean
+        val shouldUseNativeNext: Boolean
         synchronized(lock) {
+            shouldStopPlayback = queue.isEmpty() &&
+                currentJamEntry != null &&
+                onQueueEmpty == QueueEmptyBehavior.STOP_CURRENT
+            shouldUseNativeNext = queue.isEmpty() && onQueueEmpty == QueueEmptyBehavior.NATIVE_NEXT
             currentJamEntry = null
             nextEntry = if (queue.isNotEmpty()) queue.removeAt(0) else null
             if (nextEntry != null) {
                 currentJamEntry = nextEntry
+                currentSnapshot = currentSnapshot.copy(isPlaying = true, position = 0L)
+            } else if (shouldStopPlayback) {
+                currentSnapshot = currentSnapshot.copy(isPlaying = false, position = 0L)
             }
         }
 
         when {
             nextEntry != null -> playbackCommandExecutor.playMediaUrl(nextEntry.mediaUrl)
-            useNativeFallback -> playbackCommandExecutor.execute(PlaybackControlContract.ACTION_NEXT, 0L)
+            shouldStopPlayback -> playbackCommandExecutor.stopPlayback()
+            shouldUseNativeNext -> playbackCommandExecutor.execute(PlaybackControlContract.ACTION_NEXT, 0L)
         }
 
         notifyStateChanged()
@@ -279,5 +301,11 @@ class JamSessionManager(
     companion object {
         private const val START_PORT = 8787
         private const val END_PORT = 8797
+    }
+
+    private enum class QueueEmptyBehavior {
+        NO_OP,
+        STOP_CURRENT,
+        NATIVE_NEXT,
     }
 }

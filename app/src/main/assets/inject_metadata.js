@@ -1,10 +1,12 @@
 (function () {
     const state = window.__YTMusicPro;
-    if (!state) {
+    if (!state || window.__YTMusicProMetadataInjected) {
         return;
     }
+    window.__YTMusicProMetadataInjected = true;
 
     let boundMediaElement = null;
+    let rafHandle = 0;
 
     function readText(selectors) {
         for (const selector of selectors) {
@@ -84,7 +86,13 @@
     }
 
     function scheduleUpdate() {
-        window.requestAnimationFrame(updateMetadata);
+        if (rafHandle) {
+            return;
+        }
+        rafHandle = window.requestAnimationFrame(function () {
+            rafHandle = 0;
+            updateMetadata();
+        });
     }
 
     function bindMediaElementListeners() {
@@ -174,11 +182,14 @@
         }
     }
 
-    new MutationObserver(scheduleUpdate).observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["src", "title", "aria-label"]
+    [
+        "yt-navigate-finish",
+        "pageshow",
+        "popstate",
+        "visibilitychange"
+    ].forEach(function (eventName) {
+        window.addEventListener(eventName, scheduleUpdate, true);
+        document.addEventListener(eventName, scheduleUpdate, true);
     });
 
     updateMetadata();

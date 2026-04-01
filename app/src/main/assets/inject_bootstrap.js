@@ -8,8 +8,8 @@
 
     window.__YTMusicPro = {
         config: {
-            checkInterval: 1000,
-            adCheckInterval: 500
+            checkInterval: 2500,
+            adCheckInterval: 2500
         },
         lastTrack: {
             title: "",
